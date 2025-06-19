@@ -4,4 +4,4 @@ SYSTEM=$1
 IP=$2
 SERVER_IP=$3
 
-ssh root@$IP "echo ${SERVER_IP}:8080 >> /etc/hosts"
+ssh root@$IP "echo '${SERVER_IP}:8080 sqlite' >> /etc/hosts"
