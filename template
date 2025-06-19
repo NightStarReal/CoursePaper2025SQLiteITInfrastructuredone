@@ -1,0 +1,17 @@
+#!/bin/bash
+
+SYSTEM=$1
+IP=$2
+
+if [ $SYSTEM = "altlinux" ]
+then
+	#
+elif [ $SYSTEM = "astra" ]
+then
+	#
+elif [ $SYSTEM = '"redos"' ]
+then
+	#
+else
+	exit 1
+fi

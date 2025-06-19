@@ -1,0 +1,50 @@
+#!/bin/bash
+
+SYSTEM=$1
+IP=$2
+CLIENT_IP=$3
+
+# 2. Allow client to use it
+
+if [ $SYSTEM = "altlinux" ]
+then
+	# 1. Install sqlite and sqlite-web
+	ssh root@$IP "apt-get -pp install sqlite docker-engine"
+	ssh root@$IP "systemctl start docker"
+	ssh root@$IP "mkdir -p /var/www"
+	ssh root@$IP "sqlite32 /var/www/file.db 'VACUUM;'"
+	ssh root@$IP "docker pull ghcr.io/coleifer/sqlite-web:latest"
+	ssh root@$IP "docker run -it --rm -p 8080:8080 -v /var/www:/data -e SQLITE_DATABASE=file.db ghcr.io/coleifer/sqlite-web"
+	# 2. Allow only client to use it
+	ssh root@$IP "iptables -A INPUT -p tcp --dport 8080 -j DROP"
+	ssh root@$IP "iptables -A INPUT -s $CLIENT_IP -p tcp --dport 8080 -j ACCEPT"
+
+elif [ $SYSTEM = "astra" ]
+then
+	# 1. Install sqlite and sqlite-web
+	ssh root@$IP "apt-get -pp install sqlite3 docker.io"
+	ssh root@$IP "systemctl start docker"
+	ssh root@$IP "mkdir -p /var/www"
+	ssh root@$IP "sqlite32 /var/www/file.db 'VACUUM;'"
+	ssh root@$IP "docker pull ghcr.io/coleifer/sqlite-web:latest"
+	ssh root@$IP "docker run -it --rm -p 8080:8080 -v /var/www:/data -e SQLITE_DATABASE=file.db ghcr.io/coleifer/sqlite-web"
+	# 2. Allow only client to use it
+	ssh root@$IP "iptables -A INPUT -p tcp --dport 8080 -j DROP"
+	ssh root@$IP "iptables -A INPUT -s $CLIENT_IP -p tcp --dport 8080 -j ACCEPT"
+	
+elif [ $SYSTEM = '"redos"' ]
+then
+	# 1. Install sqlite and sqlite-web
+	ssh root@$IP "dnf install sqlite docker"
+	ssh root@$IP "systemctl start docker"
+	ssh root@$IP "mkdir -p /var/www"
+	ssh root@$IP "sqlite32 /var/www/file.db 'VACUUM;'"
+	ssh root@$IP "docker pull ghcr.io/coleifer/sqlite-web:latest"
+	ssh root@$IP "docker run -it --rm -p 8080:8080 -v /var/www:/data -e SQLITE_DATABASE=file.db ghcr.io/coleifer/sqlite-web"
+	# 2. Allow only client to use it
+	ssh root@$IP "iptables -A INPUT -p tcp --dport 8080 -j DROP"
+	ssh root@$IP "iptables -A INPUT -s $CLIENT_IP -p tcp --dport 8080 -j ACCEPT"
+	
+else
+	exit 1
+fi

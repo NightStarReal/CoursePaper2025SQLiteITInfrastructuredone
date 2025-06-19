@@ -1,0 +1,81 @@
+#!/bin/bash
+# main script, take ip as args and start a work
+
+IP1=$1
+IP2=$2
+IP3=$3
+SUBNET=$4
+
+# creating a no-password connection
+ssh-keygen -f /root/.ssh/id_rsa -N ""
+ssh-copy-id root@$IP1
+ssh-copy-id root@$IP2
+ssh-copy-id root@$IP3
+
+# gettingabout operational system
+SYSTEM1=$(ssh root@$IP1 "cat /etc/os-release | grep ^ID= | cut -d '=' -f 2")
+SYSTEM2=$(ssh root@$IP2 "cat /etc/os-release | grep ^ID= | cut -d '=' -f 2")
+SYSTEM3=$(ssh root@$IP3 "cat /etc/os-release | grep ^ID= | cut -d '=' -f 2")
+
+
+# get a CPU usage from all systems
+USAGE1=$(/bin/bash cpu_get $SYSTEM1 $IP1)
+USAGE2=$(/bin/bash cpu_get $SYSTEM2 $IP2)
+USAGE3=$(/bin/bash cpu_get $SYSTEM3 $IP3)
+
+USAGE1=$(echo $USAGE1 | sed 's/\.//g' | sed 's/\,//g')
+USAGE2=$(echo $USAGE2 | sed 's/\.//g' | sed 's/\,//g')
+USAGE3=$(echo $USAGE3 | sed 's/\.//g' | sed 's/\,//g')
+
+USAGE1=$((10000 - USAGE1))
+USAGE2=$((10000 - USAGE2))
+USAGE3=$((10000 - USAGE3))
+
+#echo "Usage for $IP1 - $USAGE1%"
+#echo "Usage for $IP2 - $USAGE2%"
+#echo "Usage for $IP3 - $USAGE3%"
+
+#debug
+USAGE1=$((USAGE1 + 400))
+USAGE2=$((USAGE2 + 0))
+USAGE3=$((USAGE3 + 1000))
+
+# finding what's the most and least loaded server and nominate them
+if [ $USAGE1 -ge $USAGE2 ]
+	then
+	if [ $USAGE3 -ge $USAGE1 ]
+		then
+		/bin/bash router $SYSTEM3 $IP3 $SUBNET
+		/bin/bash client $SYSTEM1 $IP1 $SUBNET $IP3 $IP2
+		/bin/bash server $SYSTEM2 $IP2 $SUBNET $IP3 $IP1
+	else
+		if [ $USAGE3 -ge $USAGE2 ]
+			then
+			/bin/bash router $SYSTEM1 $IP1 $SUBNET
+			/bin/bash client $SYSTEM3 $IP3 $SUBNET $IP1 $IP2
+			/bin/bash server $SYSTEM2 $IP2 $SUBNET $IP1 $IP3
+		else
+			/bin/bash router $SYSTEM1 $IP1 $SUBNET
+			/bin/bash client $SYSTEM2 $IP2 $SUBNET $IP1 $IP3
+			/bin/bash server $SYSTEM3 $IP3 $SUBNET $IP1 $IP2
+		fi
+	fi
+else
+	if [ $USAGE3 -ge $USAGE2 ]
+		then
+		/bin/bash router $SYSTEM3 $IP3 $SUBNET
+		/bin/bash client $SYSTEM2 $IP2 $SUBNET $IP3 $IP1
+		/bin/bash server $SYSTEM1 $IP1 $SUBNET $IP3 $IP2
+	else
+		if [ $USAGE3 -ge $USAGE1 ]
+			then
+			/bin/bash router $SYSTEM2 $IP2 $SUBNET
+			/bin/bash client $SYSTEM3 $IP3 $SUBNET $IP2 $IP1
+			/bin/bash server $SYSTEM1 $IP1 $SUBNET $IP2 $IP3
+		else
+			/bin/bash router $SYSTEM2 $IP2 $SUBNET
+			/bin/bash client $SYSTEM1 $IP1 $SUBNET $IP2 $IP3
+			/bin/bash server $SYSTEM3 $IP3 $SUBNET $IP2 $IP1
+		fi
+	fi
+fi

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+SYSTEM=$1
+IP=$2
+
+# installation of sysstat
+if [ $SYSTEM = "altlinux" ]
+then
+	ssh root@$IP 'apt-get install -y sysstat' > /dev/null
+elif [ $SYSTEM = "astra" ]
+then
+	ssh root@$IP 'apt install -y sysstat' > /dev/null
+elif [ $SYSTEM = '"redos"' ]
+then
+	ssh root@$IP 'dnf install -y sysstat' > /dev/null
+else
+	exit 1
+fi
+
+DATA=$(ssh root@$IP 'sar -u 1 1 | tail -n 1 | rev | cut -f 1 | cut -d " " -f 1 | rev')
+echo ${DATA}

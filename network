@@ -1,0 +1,97 @@
+#!/bin/bash
+
+SYSTEM=$1
+IP=$2
+SUBNET=$3
+ROUTER_IP=$4
+
+# 1. Add default gateway on router
+# 2. Destroy any other device
+
+if [ $SYSTEM = "altlinux" ]
+then
+	for interface in `ssh root@$IP 'ls /etc/net/ifaces'`
+	do
+		case $interface in
+			"lo" | "default" | "unknown")
+				;;
+			*)
+				IFACE_IP=$(ssh root@$IP "cat /etc/net/ifaces/$interface/ipv4address")
+				if [ $IFACE_IP = "${IP}/${SUBNET}" ]
+				then
+					# 1. Add default gateway on router
+					ssh root@$IP "echo 'default via $ROUTER_IP' > /etc/net/ifaces/$interface/ipv4route"
+				else
+					# 2. Destroy any other device
+					ssh root@$IP "sed -i s/DISABLED=no/DISABLED=yes/ /etc/net/ifaces/$interface/options"
+					ssh root@$IP "ip link set $interface down"
+				fi	
+				;;
+		esac
+	done
+	ssh root@$IP '/etc/init.d/network restart'
+	sleep 3
+elif [ $SYSTEM = "astra" ]
+then
+	LEN=$(ssh root@$IP 'wc -l /etc/network/interfaces | cut -d " " -f 1')
+	for (( i=1 ; i <= $LEN ; i++ )) 
+	do
+		LINE=$(ssh root@$IP "sed -n '${i}p' /etc/network/interfaces")
+		if [[ $LINE == *"iface"* ]]
+		then
+			IFACE=$(echo $LINE | cut -d " " -f 2)
+			METHOD=$(echo $LINE | cut -d " " -f 4)
+			if [ $METHOD = "dhcp" ]
+			then
+				# 2. Destroy any other device
+				ssh root@$IP "sed -i '/${IFACE}/d' /etc/network/interfaces"
+				ssh root@$IP "ip link set $IFACE down"
+				i=1
+			fi
+		fi
+		if [[ $LINE == *"address"* ]]
+		then
+			CONFIG_IP=$(echo $LINE | cut -d " " -f 2)
+			if [ $CONFIG_IP = $IP ]
+			then
+				# 1. Add default gateway on router
+				ssh root@$IP "sed -i '${i}a\gateway $ROUTER_IP' /etc/network/interfaces"
+			fi
+		fi
+	done
+	ssh root@$IP 'systemctl restart networking'
+	sleep 3
+elif [ $SYSTEM = '"redos"' ]
+then
+	LEN=$(ssh root$IP 'nmcli con show' | wc -l)
+	for (( i=1 ; i <= $LEN ; i++ ))
+	do
+		LINE=$(ssh root@$IP "nmcli con show | sed -n '${i}p'")
+		IFACE=$(echo $LINE | cut -d " " -f 1)
+		if [ $IFACE != "NAME" ]
+		then
+			CON_METHOD=$(ssh root@$IP "nmcli con show $IFACE | grep ipv4.method")
+			CON_IP=$(ssh root@$IP "nmcli con show $IFACE | grep ipv4.address")
+			if [ $CON_METHOD = "auto" && $IFACE != "lo" ]
+			then
+				# 2. Destroy any other device
+				ssh root@$IP "nmcli con down $IFACE"
+				ssh root@$IP "ip link set $IFACE down"
+			else
+				if [ $CON_IP = "${IP}/${SUBNET}" ]
+				then
+					# 1. Add default gateway on router
+					ssh root@$IP "nmcli con modify $IFACE ipv4.gateway $ROUTER_IP"
+				else
+					ssh root@$IP "nmcli con down $IFACE"
+					ssh root@$IP "ip link set $IFACE down"
+				fi
+			fi
+		fi
+	done
+	ssh root@$IP 'systemctl restart NetworkManager'
+	sleep 3
+	
+else
+	exit 1
+fi

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+SYSTEM=$1
+IP=$2
+SUBNET=$3
+ROUTER_IP=$4
+SERVER_IP=$5
+
+/bin/bash dns $SYSTEM $IP $SERVER_IP
+/bin/bash network $SYSTEM $IP $SUBNET $ROUTER_IP
