@@ -4,20 +4,16 @@ SYSTEM=$1
 IP=$2
 CLIENT_IP=$3
 
-# 2. Allow client to use it
-
+# 1. Install sqlite and sqlite-web
 if [ $SYSTEM = "altlinux" ]
 then
-	# 1. Install sqlite and sqlite-web
 	ssh root@$IP "apt-get -pp install sqlite docker-engine"
 elif [ $SYSTEM = "astra" ]
 then
-	# 1. Install sqlite and sqlite-web
 	ssh root@$IP "apt-get -pp install sqlite3 docker.io"
 	
 elif [ $SYSTEM = '"redos"' ]
 then
-	# 1. Install sqlite and sqlite-web
 	ssh root@$IP "dnf install sqlite docker"
 else
 	exit 1
