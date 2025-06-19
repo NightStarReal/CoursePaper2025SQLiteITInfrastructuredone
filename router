@@ -6,51 +6,29 @@ SUBNET=$3
 
 echo "So, the router is $IP (OS-$SYSTEM)"
 
-if [ $SYSTEM = "altlinux" ]
-	then
-	# Step 1: enable IP forwarding (permanently)
-	ssh root@$IP 'echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/router.conf'
-	ssh root@$IP 'sysctl -p'
-	# Step 2: enable port forwarding and turn on NAT
-	ssh root@$IP 'iptables -t nat -F POSTROUTING'
-	ssh root@$IP 'iptables -F FORWARD'
-	ssh root@$IP 'iptables -A FORWARD -j ACCEPT'
-	ssh root@$IP "iptables -t nat -s $IP/$SUBNET -A POSTROUTING -j MASQUERADE"
-	# Step 3: make all changes permanent
-	ssh root@$IP 'mkdir -p /etc/iptables'
-	ssh root@$IP 'iptables-save > /etc/iptables/rules.v4'
-	ssh root@$IP 'apt-get install -y iptables-persistent'
-elif [ $SYSTEM = "astra" ]
-	then
-	# Step 1: enable IP forwarding (permanently)
+# Step 1: enable IP forwarding (permanently)
+if [ $SYSTEM = "astra" ]
+then
 	ssh root@$IP 'sed -i "s/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/" /etc/sysctl.conf'
-	ssh root@$IP 'sysctl -p'
-	# Step 2: enable port forwarding and turn on NAT
-	ssh root@$IP 'iptables -t nat -F POSTROUTING'
-	ssh root@$IP 'iptables -F FORWARD'
-	ssh root@$IP 'iptables -A FORWARD -j ACCEPT'
-	ssh root@$IP "iptables -t nat -s $IP/$SUBNET -A POSTROUTING -j MASQUERADE"
-	# Step 3: make all changes permanent
-	ssh root@$IP 'mkdir -p /etc/iptables'
-	ssh root@$IP 'iptables-save > /etc/iptables/rules.v4'
-	scp crontab_router root@$IP:/root
-	ssh root@$IP 'crontab /root/crontab_router'
-	
-elif [ $SYSTEM = '"redos"' ]
-	then
-	# Step 1: enable IP forwarding (permanently)
-	ssh root@$IP 'echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/router.conf'
-	ssh root@$IP 'sysctl -p'
-	# Step 2: enable port forwarding and turn on NAT
-	ssh root@$IP 'iptables -t nat -F POSTROUTING'
-	ssh root@$IP 'iptables -F FORWARD'
-	ssh root@$IP 'iptables -A FORWARD -j ACCEPT'
-	ssh root@$IP "iptables -t nat -s $IP/$SUBNET -A POSTROUTING -j MASQUERADE"
-	# Step 3: make all changes permanent
-	ssh root@$IP 'mkdir -p /etc/iptables'
-	ssh root@$IP 'iptables-save > /etc/iptables/rules.v4'
-	scp crontab_router root@$IP:/root
-	ssh root@$IP 'crontab /root/crontab_router'
 else
-	exit 1
+	ssh root@$IP 'echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/router.conf'
+fi
+
+# Step 2: enable port forwarding and turn on NAT
+ssh root@$IP 'sysctl -p'
+ssh root@$IP 'iptables -t nat -F POSTROUTING'
+ssh root@$IP 'iptables -F FORWARD'
+ssh root@$IP 'iptables -A FORWARD -j ACCEPT'
+ssh root@$IP "iptables -t nat -s $IP/$SUBNET -A POSTROUTING -j MASQUERADE"
+
+# Step 3: make all changes permanent
+ssh root@$IP 'mkdir -p /etc/iptables'
+ssh root@$IP 'iptables-save > /etc/iptables/rules.v4'
+
+if [ $SYSTEM = "altlinux" ]
+then
+	ssh root@$IP 'apt-get install -y iptables-persistent'
+else
+	scp crontab_router root@$IP:/root
+	ssh root@$IP 'crontab /root/crontab_router'
 fi
