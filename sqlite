@@ -14,7 +14,7 @@ then
 	
 elif [ $SYSTEM = '"redos"' ]
 then
-	ssh root@$IP "dnf install sqlite docker"
+	ssh root@$IP "dnf -q install sqlite docker"
 else
 	exit 1
 fi
