@@ -31,15 +31,6 @@ USAGE1=$((10000 - USAGE1))
 USAGE2=$((10000 - USAGE2))
 USAGE3=$((10000 - USAGE3))
 
-#echo "Usage for $IP1 - $USAGE1%"
-#echo "Usage for $IP2 - $USAGE2%"
-#echo "Usage for $IP3 - $USAGE3%"
-
-#debug
-USAGE1=$((USAGE1 + 400))
-USAGE2=$((USAGE2 + 0))
-USAGE3=$((USAGE3 + 1000))
-
 # finding what's the most and least loaded server and nominate them
 if [ $USAGE1 -ge $USAGE2 ]
 	then
