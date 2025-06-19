@@ -19,7 +19,7 @@ ssh root@$IP 'sysctl -p'
 ssh root@$IP 'iptables -t nat -F POSTROUTING'
 ssh root@$IP 'iptables -F FORWARD'
 ssh root@$IP 'iptables -A FORWARD -j ACCEPT'
-ssh root@$IP "iptables -t nat -s $IP/$SUBNET -A POSTROUTING -j MASQUERADE"
+ssh root@$IP "iptables -t nat -s ${IP}/${SUBNET} -A POSTROUTING -j MASQUERADE"
 
 # Step 3: make all changes permanent
 ssh root@$IP 'mkdir -p /etc/iptables'
